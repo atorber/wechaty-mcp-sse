@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "products-sse": {
+    "url": "http://localhost:8083/sse"
+    }
+}
+}
