@@ -28,7 +28,7 @@ server.tool(
   async ({ nickname }) => {
     console.log("查找好友", { nickname });
     const contact = await bot.Contact.findAll({ name: nickname });
-    console.log("contact", contact);
+    // console.log("contact", contact);
     if (!contact) {
       return {
         content: [
@@ -36,20 +36,21 @@ server.tool(
         ]
       };
     }
-    const contactList = contact.map((c) => ({
+    const contactList = contact.map((c, index) => ({
       wxid: c.id,
-      name: c.name()
+      name: c.name(),
+      index: index + 1
     }));
     
     return {
       content: [
-        { type: "text", text: JSON.stringify(contactList) }
+        { type: "text", text: JSON.stringify(contactList, null, 2) }
       ]
     };
   }
 );
 
-// 发送消息给好友
+// 发送消息给好友ByWxId
 server.tool(
   "sendMessageToFriendByWxId",
   "发送消息给好友",
@@ -60,7 +61,7 @@ server.tool(
   async ({ wxid, message }) => {
     console.log("发送消息给好友", { wxid, message });
     const contact = await bot.Contact.find({ id: wxid });
-    console.log("contact", contact);
+    // console.log("contact", contact);
     if (!contact) {
       return {
         content: [
@@ -77,7 +78,7 @@ server.tool(
   }
 );
 
-// 发送消息给好友
+// 发送消息给好友By昵称
 server.tool(
   "sendMessageToFriendByNickname",
   "发送消息给好友",
@@ -87,16 +88,29 @@ server.tool(
   },
   async ({ nickname, message }) => {
     console.log("发送消息");
-    const contact = await bot.Contact.find({ name: nickname });
-    console.log("contact", contact);
-    if (!contact) {
+    const contacts = await bot.Contact.findAll({ name: nickname });
+    // console.log("contact", contact);
+    if (!contacts) {
         return {
           content: [
             { type: "text", text: `「${nickname}」用户不存在` }
           ]
         };
     }
-    await contact.say(message);
+    if (contacts.length > 1) {
+      const contactList = contacts.map((c, index) => ({
+        wxid: c.id,
+        name: c.name(),
+        index: index + 1
+      }));
+      return {
+        content: [
+          { type: "text", text: `「${nickname}」用户存在多个，请使用微信ID发送消息或指定发送给第几个好友` },
+          { type: "text", text: JSON.stringify(contactList, null, 2) }
+        ]
+      };
+    }
+    await contacts[0].say(message);
     return {
       content: [
         { type: "text", text: `消息发送消息到「${nickname}」成功，发送时间 ${new Date().toISOString()}` }
@@ -105,9 +119,9 @@ server.tool(
   }
 );
 
-// 查找群组
+// 查找群组By群名称
 server.tool(
-  "findRoom",
+  "findRoomByTopic",
   "查找群组",
   {
     topic: z.string().describe("群组名称")
@@ -115,20 +129,20 @@ server.tool(
   async ({ topic }) => {
     console.log("查找群组", { topic });
     const room = await bot.Room.findAll({ topic: topic });
-    console.log("room", room);
+    // console.log("room", room);
     const roomList = room.map((r) => ({
       wxid: r.id,
       name: r.topic()
     }));
     return {
       content: [
-        { type: "text", text: JSON.stringify(roomList) }
+        { type: "text", text: JSON.stringify(roomList, null, 2) }
       ]
     };
   }
 );
 
-// 发送消息给群组
+// 发送消息给群组ByWxId
 server.tool(
   "sendMessageToRoomByWxId",
   "发送消息给群组",
@@ -155,7 +169,7 @@ server.tool(
   }
 );
 
-// 发送消息给群组
+// 发送消息给群组By群名称
 server.tool(
   "sendMessageToRoomByTopic",
   "发送消息给群组",
@@ -165,15 +179,28 @@ server.tool(
   },
   async ({ topic, message }) => {
     console.log("发送消息给群组", { topic, message });
-    const room = await bot.Room.find({ topic: topic });
-    if (!room) {
+    const rooms = await bot.Room.findAll({ topic: topic });
+    if (!rooms) {
       return {
         content: [
           { type: "text", text: `「${topic}」群组不存在` }
         ]
       };
     }
-    await room.say(message);
+    if (rooms.length > 1) {
+      const roomList = rooms.map((r, index) => ({
+        wxid: r.id,
+        name: r.topic(),
+        index: index + 1
+      }));
+      return {
+        content: [
+          { type: "text", text: `「${topic}」群组存在多个，请使用微信ID发送消息或指定发送给第几个群组` },
+          { type: "text", text: JSON.stringify(roomList, null, 2) }
+        ]
+      };
+    }
+    await rooms[0].say(message);
     return {
       content: [
         { type: "text", text: `消息发送消息到「${topic}」成功，发送时间 ${new Date().toISOString()}` }

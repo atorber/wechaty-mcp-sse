@@ -2,11 +2,23 @@
 
 基于TypeScript实现的Wechaty-MCP-SSE服务器，提供Wechaty相关功能，用于连接Claude等大型语言模型和Wechaty。
 
+[chat-wechat](https://github.com/atorber/chat-wechat)的MCP版本，MCP使的这一实现极大简化。
+
 ## 功能
+
+- 使用昵称查询好友信息
+
+- 使用群名称查询群信息
 
 - 向好友发送消息
 
 - 向群发送消息
+
+## 示例
+
+![查找好友](./docs/findfriend.png)
+
+![发送消息](./docs/sendmsg.png)
 
 ## 安装与运行
 
