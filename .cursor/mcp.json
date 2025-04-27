@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "products-sse": {
-    "url": "http://localhost:8083/sse"
+    "wechaty-mcp-sse": {
+      "url": "http://localhost:8083/sse"
     }
-}
+  }
 }

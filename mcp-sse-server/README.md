@@ -1,33 +1,12 @@
-# SSE 类型的 MCP 服务器
+# Wechaty-MCP-SSE
 
-基于 TypeScript 实现的 MCP (模型上下文协议) SSE 服务器，提供智能商城相关功能，用于连接 Claude 等大型语言模型和微服务 API。
+基于 TypeScript 实现的 MCP (模型上下文协议) Wechaty-MCP-SSE服务器，提供Wechaty相关功能，用于连接Claude等大型语言模型和Wechaty。
 
-## 功能特点
+## 功能
 
-- 使用 SSE (Server-Sent Events) 实现实时数据推送
-- 支持多客户端同时连接
-- 提供商品查询、库存管理和订单处理的 MCP 工具
-- 与 Claude API 无缝集成
-- 包含健康检查和心跳机制
-- 实现优雅关闭和错误处理
+- 向好友发送消息
 
-## 项目结构
-
-```
-mcp-sse-server/
-├── src/
-│   ├── types/            # 类型定义
-│   ├── services/         # 微服务 API 实现
-│   │   ├── products.ts   # 商品服务
-│   │   ├── inventory.ts  # 库存服务
-│   │   └── orders.ts     # 订单服务
-│   ├── mcp-server.ts     # MCP 服务器实现
-│   ├── mcp-sse-server.ts # SSE 传输层实现
-│   ├── index.ts          # 入口文件
-│   └── config.ts         # 配置文件
-├── package.json
-└── tsconfig.json
-```
+- 向群发送消息
 
 ## 安装与运行
 
@@ -76,28 +55,23 @@ npm start
 
 ## MCP 工具说明
 
-本服务器实现了一个智能商城系统，提供以下 MCP 工具：
+1. **sendMessageToFriend**: 向好友发送消息
 
-1. **getProducts**: 获取所有产品信息
+   - 参数: 
+     - nickname: 好友昵称（必填）
+     - message: 消息内容（必填）
+   - 返回: 
+     - 成功：`{ content: [{ type: "text", text: "消息发送消息到「{nickname}」成功，发送时间 {timestamp}" }] }`
+     - 失败：`{ content: [{ type: "text", text: "「{nickname}」用户不存在" }] }`
 
-   - 参数: 无
-   - 返回: 产品列表，包含 id、name、price、description 等信息
+2. **sendMessageToRoom**: 向群组发送消息
 
-2. **getInventory**: 获取所有产品的库存信息
-
-   - 参数: 无
-   - 返回: 库存信息列表，包含 productId、quantity 等信息
-
-3. **getOrders**: 获取所有订单信息
-
-   - 参数: 无
-   - 返回: 订单列表，包含 id、customerName、items、totalAmount 等信息
-
-4. **purchase**: 购买商品
-   - 参数:
-     - customerName: 客户姓名
-     - items: 商品列表，每项包含 productId 和 quantity
-   - 返回: 订单信息
+   - 参数: 
+     - topic: 群组名称（必填）
+     - message: 消息内容（必填）
+   - 返回: 
+     - 成功：`{ content: [{ type: "text", text: "消息发送消息到「{topic}」成功，发送时间 {timestamp}" }] }`
+     - 失败：`{ content: [{ type: "text", text: "「{topic}」群组不存在" }] }`
 
 ## 与 Claude 集成
 
@@ -157,13 +131,3 @@ SSE 特性：
 2. 在工具调用完成后发送结果
 3. 发送心跳以保持连接活跃
 
-## 示例客户端
-
-我们提供了两种客户端实现：
-
-1. 命令行客户端 (CLI)
-2. Web 客户端
-
-相关代码和使用方法请参考 [MCP 客户端示例](../mcp-client/README.md)。
-
-![智能商城 Web 界面](https://picdn.youdianzhishi.com/images/1743580945607.png)
