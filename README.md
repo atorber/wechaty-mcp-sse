@@ -13,6 +13,7 @@
 1. 安装依赖
 
 ```bash
+cd mcp-sse-server
 npm install
 ```
 

@@ -10,7 +10,7 @@ import { createAnthropicClient } from './utils.js';
 
 async function main() {
   console.log(chalk.cyan('================================================'));
-  console.log(chalk.cyan('         欢迎使用智能商城 MCP 客户端           '));
+  console.log(chalk.cyan('         欢迎使用智能消息 MCP 客户端           '));
   console.log(chalk.cyan('================================================'));
   
   // 初始化OpenAI客户端
@@ -21,7 +21,7 @@ async function main() {
   try {
     // 创建MCP客户端
     const mcpClient = new McpClient({
-      name: 'mcp-sse-demo',
+      name: 'wechaty-mcp-sse',
       version: '1.0.0',
     });
 

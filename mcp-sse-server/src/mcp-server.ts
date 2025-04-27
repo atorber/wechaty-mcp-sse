@@ -6,91 +6,7 @@ import { z } from "zod";
 
 import 'dotenv/config.js'
 
-import {
-  Contact,
-  Message,
-  ScanStatus,
-  WechatyBuilder,
-  log,
-} from 'wechaty'
-
-import qrcodeTerminal from 'qrcode-terminal'
-
-function onScan (qrcode: string, status: ScanStatus) {
-  if (status === ScanStatus.Waiting || status === ScanStatus.Timeout) {
-    const qrcodeImageUrl = [
-      'https://wechaty.js.org/qrcode/',
-      encodeURIComponent(qrcode),
-    ].join('')
-    log.info('StarterBot', 'onScan: %s(%s) - %s', ScanStatus[status], status, qrcodeImageUrl)
-
-    qrcodeTerminal.generate(qrcode, { small: true })  // show qrcode on console
-
-  } else {
-    log.info('StarterBot', 'onScan: %s(%s)', ScanStatus[status], status)
-  }
-}
-
-function onLogin (user: Contact) {
-  log.info('StarterBot', '%s login', user)
-}
-
-function onLogout (user: Contact) {
-  log.info('StarterBot', '%s logout', user)
-}
-
-async function onMessage (msg: Message) {
-  log.info('StarterBot', msg.toString())
-
-  if (msg.text() === 'ding') {
-    await msg.say('dong')
-  }
-}
-
-const bot = WechatyBuilder.build({
-  name: 'ding-dong-bot',
-  puppet: 'wechaty-puppet-padlocal',
-  puppetOptions: {
-    token: process.env.WECHATY_PUPPET_TOKEN,
-  },
-  /**
-   * You can specific `puppet` and `puppetOptions` here with hard coding:
-   *
-  puppet: 'wechaty-puppet-wechat',
-  puppetOptions: {
-    uos: true,
-  },
-   */
-  /**
-   * How to set Wechaty Puppet Provider:
-   *
-   *  1. Specify a `puppet` option when instantiating Wechaty. (like `{ puppet: 'wechaty-puppet-whatsapp' }`, see below)
-   *  1. Set the `WECHATY_PUPPET` environment variable to the puppet NPM module name. (like `wechaty-puppet-whatsapp`)
-   *
-   * You can use the following providers locally:
-   *  - wechaty-puppet-wechat (web protocol, no token required)
-   *  - wechaty-puppet-whatsapp (web protocol, no token required)
-   *  - wechaty-puppet-padlocal (pad protocol, token required)
-   *  - etc. see: <https://wechaty.js.org/docs/puppet-providers/>
-   */
-  // puppet: 'wechaty-puppet-whatsapp'
-
-  /**
-   * You can use wechaty puppet provider 'wechaty-puppet-service'
-   *   which can connect to remote Wechaty Puppet Services
-   *   for using more powerful protocol.
-   * Learn more about services (and TOKEN) from https://wechaty.js.org/docs/puppet-services/
-   */
-  // puppet: 'wechaty-puppet-service'
-  // puppetOptions: {
-  //   token: 'xxx',
-  // }
-})
-
-bot.on('scan',    onScan)
-bot.on('login',   onLogin)
-bot.on('logout',  onLogout)
-// bot.on('message', onMessage)
+import { bot, log } from "./bot.js";
 
 bot.start()
   .then(() => log.info('StarterBot', 'Starter Bot Started.'))
@@ -102,9 +18,68 @@ export const server = new McpServer({
   description: "提供发送消息给用户和聊天室或群组的功能"
 });
 
+// 查找好友
+server.tool(
+  "findFriend",
+  "查找好友",
+  {
+    nickname: z.string().describe("好友昵称")
+  },
+  async ({ nickname }) => {
+    console.log("查找好友", { nickname });
+    const contact = await bot.Contact.findAll({ name: nickname });
+    console.log("contact", contact);
+    if (!contact) {
+      return {
+        content: [
+          { type: "text", text: `「${nickname}」用户不存在` }
+        ]
+      };
+    }
+    const contactList = contact.map((c) => ({
+      wxid: c.id,
+      name: c.name()
+    }));
+    
+    return {
+      content: [
+        { type: "text", text: JSON.stringify(contactList) }
+      ]
+    };
+  }
+);
+
 // 发送消息给好友
 server.tool(
-  "sendMessageToFriend",
+  "sendMessageToFriendByWxId",
+  "发送消息给好友",
+  {
+    wxid: z.string().describe("微信ID"),
+    message: z.string().describe("消息内容")
+  },
+  async ({ wxid, message }) => {
+    console.log("发送消息给好友", { wxid, message });
+    const contact = await bot.Contact.find({ id: wxid });
+    console.log("contact", contact);
+    if (!contact) {
+      return {
+        content: [
+          { type: "text", text: `「${wxid}」用户不存在` }
+        ]
+      };
+    }
+    await contact.say(message);
+    return {
+      content: [
+        { type: "text", text: `消息发送消息到「${wxid}」成功，发送时间 ${new Date().toISOString()}` }
+      ]
+    };
+  }
+);
+
+// 发送消息给好友
+server.tool(
+  "sendMessageToFriendByNickname",
   "发送消息给好友",
   {
     nickname: z.string().describe("好友昵称"),
@@ -130,9 +105,59 @@ server.tool(
   }
 );
 
+// 查找群组
+server.tool(
+  "findRoom",
+  "查找群组",
+  {
+    topic: z.string().describe("群组名称")
+  },
+  async ({ topic }) => {
+    console.log("查找群组", { topic });
+    const room = await bot.Room.findAll({ topic: topic });
+    console.log("room", room);
+    const roomList = room.map((r) => ({
+      wxid: r.id,
+      name: r.topic()
+    }));
+    return {
+      content: [
+        { type: "text", text: JSON.stringify(roomList) }
+      ]
+    };
+  }
+);
+
 // 发送消息给群组
 server.tool(
-  "sendMessageToRoom",
+  "sendMessageToRoomByWxId",
+  "发送消息给群组",
+  {
+    wxid: z.string().describe("微信ID"),
+    message: z.string().describe("消息内容")
+  },
+  async ({ wxid, message }) => {
+    console.log("发送消息给群组", { wxid, message });
+    const room = await bot.Room.find({ id: wxid });
+    if (!room) {
+      return {
+        content: [
+          { type: "text", text: `「${wxid}」群组不存在` }
+        ]
+      };
+    }
+    await room.say(message);
+    return {
+      content: [
+        { type: "text", text: `消息发送消息到「${wxid}」成功，发送时间 ${new Date().toISOString()}` }
+      ]
+    };
+  }
+);
+
+// 发送消息给群组
+server.tool(
+  "sendMessageToRoomByTopic",
   "发送消息给群组",
   {
     topic: z.string().describe("群组名称"),
@@ -158,63 +183,6 @@ server.tool(
 );
 
 /*
-
-// 获取产品列表工具
-server.tool(
-  "getProducts", 
-  "获取所有产品信息", 
-  {}, 
-  async () => {
-    console.log("获取产品列表");
-    const products = await getProducts();
-    return { 
-      content: [
-        { 
-          type: "text", 
-          text: JSON.stringify(products) 
-        }
-      ] 
-    };
-  }
-);
-
-// 获取库存信息工具
-server.tool(
-  "getInventory", 
-  "获取所有产品的库存信息", 
-  {}, 
-  async () => {
-    console.log("获取库存信息");
-    const inventory = await getInventory();
-    return { 
-      content: [
-        { 
-          type: "text", 
-          text: JSON.stringify(inventory) 
-        }
-      ] 
-    };
-  }
-);
-
-// 获取订单列表工具
-server.tool(
-  "getOrders", 
-  "获取所有订单信息", 
-  {}, 
-  async () => {
-    console.log("获取订单列表");
-    const orders = await getOrders();
-    return { 
-      content: [
-        { 
-          type: "text", 
-          text: JSON.stringify(orders) 
-        }
-      ] 
-    };
-  }
-);
 
 // 购买商品工具
 server.tool(
