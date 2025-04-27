@@ -14,11 +14,23 @@
 
 - 向群发送消息
 
-## 示例
+## MCP配置信息
 
-![查找好友](./docs/findfriend.png)
+```
+{
+  "mcpServers": {
+    "wechaty-mcp-sse": {
+      "url": "http://localhost:8083/sse"
+    }
+  }
+}
+```
 
-![发送消息](./docs/sendmsg.png)
+## 使用示例
+
+<img src="./docs/findfriend.png" alt="查找好友" height="300" />
+
+<img src="./docs/sendmsg.png" alt="发送消息" height="300" />
 
 ## 安装与运行
 
@@ -53,19 +65,6 @@ npm run build
 npm start
 ```
 
-## API 端点
-
-- **SSE 连接**: `GET /sse`
-
-  - 建立 SSE 连接，获取实时更新
-
-- **消息处理**: `POST /messages`
-
-  - 接收 MCP 客户端消息并处理
-
-- **健康检查**: `GET /health`
-  - 获取服务器状态信息
-
 ## MCP 工具说明
 
 1. **sendMessageToFriend**: 向好友发送消息
@@ -96,15 +95,6 @@ npm start
 4. Claude 可以根据用户需求调用相应的工具
 5. 客户端处理工具结果并返回给用户
 
-## 生产环境部署
-
-部署到生产环境时，请考虑以下最佳实践：
-
-1. 使用进程管理器如 PM2 管理 Node.js 进程
-2. 设置合适的内存限制
-3. 配置负载均衡以实现高可用性
-4. 启用 HTTPS 以确保通信安全
-5. 设置适当的日志级别和监控工具
 
 ## 容器化部署
 
@@ -126,20 +116,3 @@ USER node
 
 CMD ["node", "dist/index.js"]
 ```
-
-## SSE (Server-Sent Events) 说明
-
-SSE 是一种服务器推送技术，允许服务器向客户端发送事件流。与 WebSocket 不同，SSE 是单向的（只从服务器到客户端），并使用标准 HTTP 协议。
-
-SSE 特性：
-
-- 基于 HTTP，无需特殊协议
-- 自动重连机制
-- 事件 ID 和自定义事件类型
-- 相比 WebSocket 更轻量级
-
-在 MCP 服务器中，SSE 用于：
-
-1. 将工具定义发送给 MCP 客户端
-2. 在工具调用完成后发送结果
-3. 发送心跳以保持连接活跃
